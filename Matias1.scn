@@ -1,0 +1,11 @@
+name=ParticleSystem
+nparts=46236
+particle_volume=2.3090620743460022e-05
+kernel_parts=27
+tini=0.0
+tfin=2.5
+tstep=0.009999999776482582
+fintol=0.0010000000474974513
+parallel=True
+nprocs=0
+gravity=[0.0, 0.0, -9.800000190734863]
