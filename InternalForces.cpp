@@ -6,26 +6,35 @@ void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<
 
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
-	// unsigned int auxCounter = 0;
-	for (int i = 0; i < count; i++) {
-		l_density.at(i) = 0;
-		for (int j : l_neighbors.at(i)) {
-			Vec3 vAux;
-			Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
-			l_density.at(i) += mass * Kernels::Value(vAux);
-			// auxCounter++;
+#pragma omp parallel
+	{
+		Vec3 vAux;
+#pragma omp for private(vAux)
+		for (int i = 0; i < count; i++) {
+			l_density.at(i) = 0;
+			for (int j : l_neighbors.at(i)) {
+				vAux.SetZero();
+				Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
+				l_density.at(i) += mass * Kernels::Value(vAux);
+			}
 		}
 	}
+
 	cout << "ComputeMassDensity" << endl;
 }
 
 void InternalForces::ComputePressures(const vector<float> & l_density, vector<float> & l_pressures, float restDensity) {
 	int count = FluidParams::nParticles;
 	float stiffness = FluidParams::stiffness;
-	for (int i = 0; i < count; i++) {
-		l_pressures.at(i) = stiffness * (l_density.at(i) - restDensity);
-//		l_pressures.at(i) = stiffness * l_density.at(i);
+#pragma omp parallel
+	{
+#pragma omp for
+		for (int i = 0; i < count; i++) {
+			l_pressures.at(i) = stiffness * (l_density.at(i) - restDensity);
+			//		l_pressures.at(i) = stiffness * l_density.at(i);
+		}
 	}
+
 	cout << "ComputePressures" << endl;
 }
 
@@ -41,8 +50,13 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 			if (i != j && l_density.at(j) != 0) {
 				Vec3 vAux;
 				Vec3::vDirector(l_positions[j], l_positions[i], vAux);
-				l_internalForce[i] -= ( ((l_pressures[i] + l_pressures[j]) / (2 * l_density[j])) * mass
-						* Kernels::SpikyGradient(vAux));
+//				l_internalForce[i] -= ( ((l_pressures[i] + l_pressures[j]) / (2 * l_density[j])) * mass
+//						* Kernels::SpikyGradient(vAux));
+
+				l_internalForce.at(i) = l_internalForce.at(i)
+						- (l_pressures.at(i) + l_pressures.at(j) / 2) * (mass / l_density.at(j))
+								* Kernels::SpikyGradient(vAux);
+
 			}
 		}
 

@@ -48,7 +48,7 @@ void Integrator::ComputeAccelerations(vector<Vec3> & l_acceleration,
 {
 	int count = FluidParams::nParticles;
 	for (int i = 0; i < count; i++) {
-		if (l_density.at(i) !=0) {
+		if (l_density.at(i) != 0) {
 			l_acceleration[i] = (l_internalForce[i] + l_externalForce[i]) / l_density[i];
 		}
 

@@ -89,7 +89,7 @@ bool BlenderIO::ReadPOSVEL(string fileName, vector<Vec3> & l_pos, vector<Vec3> &
 	string word;
 	int count = 0;
 	int auxCounter = 0;
-	int pMax = (11859 + 1) * 3; //REVISAR
+	int pMax = (FluidParams::nParticles + 1) * 3; //REVISAR
 	//int pMax = (FluidParams::nParticles + 1) * 3;
 	myFile.open(fileName + ".dat", ios::in);
 

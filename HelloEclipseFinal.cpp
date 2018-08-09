@@ -40,13 +40,21 @@ int main() {
 	string name = "Matias1";
 	//cin >> name;
 
-	if (!BlenderIO::ReadParams(name, l_bounds) || !BlenderIO::ReadPOSVEL(name, l_positions, l_velocity)) {
-		cout << "ERRROROROROOROROROROROR" << endl;
+	if (!BlenderIO::ReadParams(name, l_bounds) ) {
+		cout << "ERRROROROROOROROROROROR PARAMS" << endl;
 		return 0;
 	}
 
-	Kernels::Initialize(0.0457);
 	FluidParams::Initialize();
+	Kernels::Initialize(FluidParams::kernelRadius);
+
+	if (!BlenderIO::ReadPOSVEL(name, l_positions, l_velocity)) {
+		cout << "ERRROROROROOROROROROROR POS VEL" << endl;
+				return 0;
+	}
+
+
+
 	HashTable::Initialize();
 
 	vector<Vec3> l_pressureForce(FluidParams::nParticles), l_internalForce(FluidParams::nParticles), l_externalForce(
@@ -68,8 +76,7 @@ int main() {
 	cout << "STIFF ->> " << FluidParams::stiffness << endl;
 	cout << "DT ->> " << FluidParams::dt << endl;
 
-
-	for (int i = 1; i < FluidParams::simulationSteps; i++) {
+	for (int i = 1; i < 450/*< FluidParams::simulationSteps*/; i++) {
 
 		HashTable::InsertParticles(l_positions);
 		HashTable::RetrieveNeighbors(l_neighbors, l_positions);
@@ -77,7 +84,7 @@ int main() {
 		InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
 		InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
 		InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_internalForce, l_neighbors);
-//		InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors);
+		InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors);
 
 		float sDensity = 0;
 		for (auto d : l_density) {
@@ -86,9 +93,9 @@ int main() {
 		sDensity /= FluidParams::nParticles;
 //
 //		ExternalForces::ComputeGravity(l_externalForce, l_density);
-//		ExternalForces::ComputeInwardNormal(l_density, l_neighbors, l_positions, l_normals);
-//		ExternalForces::ComputeColorField(l_density, l_neighbors, l_positions, l_color);
-//		ExternalForces::ComputeSurfaceTension(l_color, l_normals, l_externalForce);
+		ExternalForces::ComputeInwardNormal(l_density, l_neighbors, l_positions, l_normals);
+		ExternalForces::ComputeColorField(l_density, l_neighbors, l_positions, l_color);
+		ExternalForces::ComputeSurfaceTension(l_color, l_normals, l_externalForce);
 
 		Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_externalForce, l_density);
 		Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);

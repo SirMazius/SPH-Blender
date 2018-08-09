@@ -106,5 +106,15 @@ public:
 		return vAux;
 	}
 
+	inline static Vec3 Mult(const Vec3 & v1, float i) {
+			Vec3 vAux;
+
+			vAux.x = v1.x * i;
+			vAux.y = v1.y * i;
+			vAux.z = v1.z * i;
+
+			return vAux;
+		}
+
 	double x, y, z;
 };

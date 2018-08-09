@@ -29,9 +29,10 @@ public:
 	static void Smen();
 
 private:
-	static float h, h2, h6, h9;
-	static float valueFactor, valueGradientFactor, valueLaplacianFactor;
-	static float spikyGradientFactor;
-	static float viscosityLaplacianFactor;
+	static float h, h2;
+	static double h6, h9;
+	static double valueFactor, valueGradientFactor, valueLaplacianFactor;
+	static double spikyGradientFactor;
+	static double viscosityLaplacianFactor;
 	static constexpr float PI = 3.1415926;
 };

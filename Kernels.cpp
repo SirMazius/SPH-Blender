@@ -2,14 +2,14 @@
 
 float Kernels::h = 0;
 float Kernels::h2 = 0;
-float Kernels::h6 = 0;
-float Kernels::h9 = 0;
+double Kernels::h6 = 0;
+double Kernels::h9 = 0;
 
-float Kernels::valueFactor = 0;
-float Kernels::valueGradientFactor = 0;
-float Kernels::valueLaplacianFactor = 0;
-float Kernels::spikyGradientFactor = 0;
-float Kernels::viscosityLaplacianFactor = 0;
+double Kernels::valueFactor = 0;
+double Kernels::valueGradientFactor = 0;
+double Kernels::valueLaplacianFactor = 0;
+double Kernels::spikyGradientFactor = 0;
+double Kernels::viscosityLaplacianFactor = 0;
 
 void Kernels::SayYEy() {
 	cout << "HOLA" << endl;
@@ -30,6 +30,9 @@ void Kernels::Initialize(float _h) {
 	spikyGradientFactor = -45 / (PI * h6);
 	viscosityLaplacianFactor = -45 / (PI * h6);
 	viscosityLaplacianFactor = 45 / (PI * h6);
+
+	cout << "H6" << h6 << endl;
+	cout << "H9" << h9 << endl;
 }
 
 float Kernels::Value(Vec3 & r) {
@@ -57,7 +60,7 @@ float Kernels::ValueLaplacian(Vec3 & r) {
 Vec3 Kernels::SpikyGradient(Vec3 & r) {
 	float mag = r.mag();
 	if (mag <= h && abs(mag) > 0.001) {
-		return spikyGradientFactor * (r / mag) * pow(h - mag, 2);
+		return  Vec3::Mult(Vec3::Mult(Vec3::Div(r, mag), spikyGradientFactor), pow(h - mag, 2));
 	}
 	return Vec3();
 }

@@ -25,7 +25,7 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 	nParticles = stoi(BlenderIO::parametersMap.find("nparts")->second);
 	dt = stof(BlenderIO::parametersMap.find("tstep")->second);
 	restDensity = stof(BlenderIO::parametersMap.find("density")->second);
-	mass = 0.02;
+	mass = 0.04;
 	viscosity = stof(BlenderIO::parametersMap.find("visco")->second);
 	surfaceTension = stof(BlenderIO::parametersMap.find("surften")->second);
 
