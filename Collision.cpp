@@ -1,8 +1,10 @@
 #include "Collision.h"
-
+#include "Vec3.h"
 void Collision::Collide(vector<Vec3> & l_positions, vector<Vec3> & l_velocity, Vec3 box[2]) {
 	int count = FluidParams::nParticles;
 	float restitution = FluidParams::restitutionCoef;
+
+#pragma omp parallel for
 	for (int i = 0; i < count; i++) {
 
 		Vec3 *pos = &l_positions[i];

@@ -1,50 +1,43 @@
 #include "InternalForces.h"
 #include "Vec3.h"
 #include "Kernels.h"
-void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions,
-		const vector<vector<int>> & l_neighbors) {
+void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors) {
 
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
-#pragma omp parallel
-	{
-		Vec3 vAux;
-#pragma omp for private(vAux)
-		for (int i = 0; i < count; i++) {
-			l_density.at(i) = 0;
-			for (int j : l_neighbors.at(i)) {
-				vAux.SetZero();
-				Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
-				l_density.at(i) += mass * Kernels::Value(vAux);
-			}
+#pragma omp parallel for
+	for (int i = 0; i < count; i++) {
+		l_density.at(i) = 0;
+		for (int j : l_neighbors.at(i)) {
+			Vec3 vAux;
+			Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
+			l_density.at(i) += mass * Kernels::Value(vAux);
 		}
 	}
 
-	cout << "ComputeMassDensity" << endl;
+	//cout << "ComputeMassDensity" << endl;
 }
 
 void InternalForces::ComputePressures(const vector<float> & l_density, vector<float> & l_pressures, float restDensity) {
 	int count = FluidParams::nParticles;
 	float stiffness = FluidParams::stiffness;
-#pragma omp parallel
-	{
-#pragma omp for
-		for (int i = 0; i < count; i++) {
-			l_pressures.at(i) = stiffness * (l_density.at(i) - restDensity);
-			//		l_pressures.at(i) = stiffness * l_density.at(i);
-		}
+#pragma omp parallel for
+	for (int i = 0; i < count; i++) {
+		l_pressures.at(i) = stiffness * (l_density.at(i) - restDensity);
+		//		l_pressures.at(i) = stiffness * l_density.at(i);
 	}
 
-	cout << "ComputePressures" << endl;
+	//cout << "ComputePressures" << endl;
 }
 
-void InternalForces::ComputePressureForce(const vector<float> & l_density, const vector<Vec3> & l_positions,
-		const vector<float> & l_pressures, vector<Vec3> & l_internalForce, const vector<vector<int>> l_neighbors) {
+void InternalForces::ComputePressureForce(const vector<float> & l_density, const vector<Vec3> & l_positions, const vector<float> & l_pressures,
+		vector<Vec3> & l_internalForce, const vector<vector<int>> & l_neighbors) {
 
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
-
+#pragma omp parallel for
 	for (int i = 0; i < count; i++) {
+		Vec3 pressureAux;
 		l_internalForce.at(i).SetZero();
 		for (int j : l_neighbors[i]) {
 			if (i != j && l_density.at(j) != 0) {
@@ -53,34 +46,42 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 //				l_internalForce[i] -= ( ((l_pressures[i] + l_pressures[j]) / (2 * l_density[j])) * mass
 //						* Kernels::SpikyGradient(vAux));
 
-				l_internalForce.at(i) = l_internalForce.at(i)
-						- (l_pressures.at(i) + l_pressures.at(j) / 2) * (mass / l_density.at(j))
+//				l_internalForce.at(i) = l_internalForce.at(i)
+//						- (l_pressures.at(i) + l_pressures.at(j) / 2) * (mass / l_density.at(j))
+//								* Kernels::SpikyGradient(vAux);
+
+				pressureAux = pressureAux
+						+ (l_pressures.at(i) / (l_density.at(i) * l_density.at(i)) + l_pressures.at(j) / (l_density.at(j) * l_density.at(j))) * mass
 								* Kernels::SpikyGradient(vAux);
 
 			}
 		}
-
+		l_internalForce.at(i) = pressureAux * -l_density.at(i);
 	}
-	cout << "ComputePressureForce" << endl;
+	//cout << "ComputePressureForce" << endl;
 }
 
-void InternalForces::ComputeViscosityForce(const vector<float> & l_density, const vector<Vec3> & l_velocity,
-		vector<Vec3> & l_internalForce, const vector<vector<int>> & l_neighbors) {
+void InternalForces::ComputeViscosityForce(const vector<float> & l_density, vector<Vec3> & l_velocity, vector<Vec3> & l_internalForce,
+		const vector<vector<int>> & l_neighbors, const vector<Vec3> & l_positions) {
 	float mu = FluidParams::viscosity;
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
+
+#pragma omp parallel for
 	for (int i = 0; i < count; i++) {
 		Vec3 viscosityForce;
+//		for (auto v : l_velocity)
+//			if (v.x > 0)
+//				cout << v;
 		for (int j : l_neighbors[i]) {
 			if (i != j && l_density.at(j) != 0) {
 				Vec3 vAux, vDir;
-				// cout << "SIZEEZ "<< l_velocity.size() << endl;
 				Vec3::vDirector(l_velocity.at(i), l_velocity.at(j), vAux);
-				Vec3::vDirector(l_velocity.at(j), l_velocity.at(i), vDir);
+				Vec3::vDirector(l_positions.at(j), l_positions.at(i), vDir);
 				viscosityForce += (vAux * (mass / l_density.at(j)) * Kernels::ViscosityLaplacian(vDir));
 			}
 		}
 		l_internalForce.at(i) += viscosityForce * mu;
 	}
-	cout << "ComputeViscosityForce" << endl;
+	//cout << "ComputeViscosityForce" << endl;
 }

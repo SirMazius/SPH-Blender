@@ -102,11 +102,12 @@ int HashTable::NextPrime(int n) { // HAY QUE PASARLE EL SIZE QUE TOQUE
 }
 
 void HashTable::RetrieveNeighbors(vector<vector<int>> & l_neighbors, const vector<Vec3> & l_position) {
-	Vec3 bbMin, bbMax, vAux;
+
 	int count = FluidParams::nParticles;
 	double hLenght = FluidParams::kernelRadius;
-
+#pragma omp parallel for
 	for (int i = 0; i < count; i++) {
+		Vec3 bbMin, bbMax, vAux;
 		const Vec3 *pos = &l_position[i];
 
 		bbMin.x = pos->x - hLenght;

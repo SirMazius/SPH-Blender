@@ -25,7 +25,7 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 	nParticles = stoi(BlenderIO::parametersMap.find("nparts")->second);
 	dt = stof(BlenderIO::parametersMap.find("tstep")->second);
 	restDensity = stof(BlenderIO::parametersMap.find("density")->second);
-	mass = 0.04;
+	mass = 0.02;
 	viscosity = stof(BlenderIO::parametersMap.find("visco")->second);
 	surfaceTension = stof(BlenderIO::parametersMap.find("surften")->second);
 
@@ -34,6 +34,6 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 	kernelParticles = stof(BlenderIO::parametersMap.find("kernel_parts")->second);
 	fluidVolume = ( nParticles * mass ) / restDensity;
 	kernelRadius = cbrt((3*fluidVolume*kernelParticles)/(4*nParticles*3.14159));//0.0457;
-	simulationSteps = stof(BlenderIO::parametersMap.find("tfin")->second) / dt;
+	simulationSteps = stof(BlenderIO::parametersMap.find("tfin")->second) / (dt * 10);
 	threshold = sqrt(restDensity/kernelParticles);// stof(BlenderIO::parametersMap.find("surften_threshold")->second);
 }
