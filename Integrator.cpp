@@ -77,7 +77,7 @@ void Integrator::EulerSemi(vector<Vec3> & l_position, vector<Vec3> & l_velocity,
 
 }
 
-void Integrator::ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3> & l_internalForce,
+void Integrator::ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3> & l_internalForce, vector<Vec3> & l_pressureForce,
 		vector<Vec3> & l_externalForce, vector<float> & l_density) {
 	int count = FluidParams::nParticles;
 	//float mass = FluidParams::mass;
@@ -85,7 +85,7 @@ void Integrator::ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3
 	for (int i = 0; i < count; i++) {
 		//if (l_density.at(i) > 0.0001)
 		{
-			l_acceleration[i] = ((l_internalForce[i] + l_externalForce[i]))/ l_density[i];
+			l_acceleration[i] = ((l_internalForce[i] + l_externalForce[i]) + l_pressureForce[i])/ l_density[i];
 			//l_acceleration[i] = (l_internalForce[i] + l_externalForce[i]) / mass;
 		}
 

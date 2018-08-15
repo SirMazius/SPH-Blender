@@ -107,14 +107,18 @@ public:
 	}
 
 	inline static Vec3 Mult(const Vec3 & v1, float i) {
-			Vec3 vAux;
+		Vec3 vAux;
 
-			vAux.x = v1.x * i;
-			vAux.y = v1.y * i;
-			vAux.z = v1.z * i;
+		vAux.x = v1.x * i;
+		vAux.y = v1.y * i;
+		vAux.z = v1.z * i;
 
-			return vAux;
-		}
+		return vAux;
+	}
+
+	inline static float Dot(const Vec3 & v1, const Vec3 & v2) {
+		return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
+	}
 
 	double x, y, z;
 };

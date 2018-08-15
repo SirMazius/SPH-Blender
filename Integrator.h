@@ -7,7 +7,7 @@ using namespace std;
 
 class Integrator {
 public:
-	static void ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3> & l_internalForce,
+	static void ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3> & l_internalForce, vector<Vec3> & l_pressureForce,
 			vector<Vec3> & l_externalForce, vector<float> & l_density);
 
 	static void LeapFrog(vector<Vec3> & l_pos, vector<Vec3> & l_velocity, vector<Vec3> & l_acceleration,

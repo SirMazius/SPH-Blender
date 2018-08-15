@@ -17,7 +17,9 @@ public:
 	static float kernelParticles;
 	static float kernelRadius;
 	static float dt;
+	static float dt2;
 	static float fluidVolume;
+	static float beta;
 
 	static void Initialize(/*int _nParticles, float _restDensity, float _mass,
 			float _viscosity, float _surfaceTension, float _threshold,
