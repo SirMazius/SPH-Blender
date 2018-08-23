@@ -2,6 +2,7 @@
 
 #include "BlenderIO.h"
 #include <string>
+#include "Kernels.h"
 using namespace std;
 class FluidParams{
 public:
@@ -20,6 +21,8 @@ public:
 	static float dt2;
 	static float fluidVolume;
 	static float beta;
+	static float particleRadius;
+	static float pciKernelFactor;
 
 	static void Initialize(/*int _nParticles, float _restDensity, float _mass,
 			float _viscosity, float _surfaceTension, float _threshold,

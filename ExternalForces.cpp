@@ -4,7 +4,8 @@ void ExternalForces::ComputeGravity(vector<Vec3> &l_externalForce, const vector<
 
 	int count = FluidParams::nParticles;
 	Vec3 gravity(0.0, 0.0, -4.8);
-	//Vec3 gravity(0.0, 0.0, 0.0);
+//	Vec3 gravity(0.0, 0.0, 0.0);
+//	Vec3 gravity(0.0, 0.0, -9.8);
 
 #pragma omp parallel for
 	for (int i = 0; i < count; i++) {

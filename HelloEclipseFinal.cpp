@@ -75,9 +75,10 @@ int main() {
 	cout << "DT ->> " << FluidParams::dt << endl;
 	cout << "THRESHOLD ->> " << FluidParams::threshold << endl;
 	cout << "TENSION ->> " << FluidParams::surfaceTension << endl;
+	cout << "PARTICLE RADIUS ->> " << FluidParams::particleRadius << endl;
 
-//	Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures, l_color, name,
-//			l_bounds);
+//	Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
+//			l_color, name, l_bounds);
 
 	Compute_PCI_SPH(l_neighbors, l_pressureForce, l_positions, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
 			l_color, name, l_bounds);
@@ -96,6 +97,10 @@ int main() {
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]) {
+
+	vector<Vec3> l_prevPos(FluidParams::nParticles);
+	l_prevPos = l_positions;
+
 	for (int i = 1; i < FluidParams::simulationSteps; i++) {
 		for (int j = 0; j < 10; j++) {
 
@@ -103,6 +108,16 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
 
 			InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
+
+//			float sDensity = 0;
+//			for (auto d : l_density) {
+//				if (d > 250)
+//					sDensity += d;
+//			}
+//			sDensity /= FluidParams::nParticles;
+//
+//			cout << sDensity << endl;
+
 			InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
 			InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_pressureForce, l_neighbors);
 			InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors, l_positions);
@@ -113,8 +128,8 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 			ExternalForces::ComputeSurfaceTension(l_color, l_normals, l_externalForce);
 
 			Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
-//			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevV, isFirst);
-			Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
+			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevPos);
+//			Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
 
 			Collision::Collide(l_positions, l_velocity, l_bounds);
 
@@ -136,16 +151,15 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]) {
 
-	vector<float> l_auxDensity(FluidParams::nParticles);
+	//vector<float> l_auxDensity(FluidParams::nParticles);
+	vector<Vec3> l_prevPos(FluidParams::nParticles);
+	l_prevPos = l_positions;
 
 	for (int i = 1; i < FluidParams::simulationSteps; i++) {
-//		for (int j = 0; j < 10; j++)
-		{
+		float MaxpError;
+		for (int j = 0; j < 10; j++) {
 			int iterations = 0;
-			float pError = 0;
-
-			vector<Vec3> l_auxVelocity = l_velocity;
-			vector<Vec3> l_auxPos = l_positions;
+			MaxpError = 0;
 
 			HashTable::InsertParticles(l_positions);
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
@@ -163,31 +177,51 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 			std::fill(l_pressures.begin(), l_pressures.end(), 0.0f);
 			std::fill(l_pressureForce.begin(), l_pressureForce.end(), Vec3());
 
-//			float totalDensity = std::accumulate(l_density.begin(), l_density.end(), 0) / FluidParams::nParticles;
-//			totalDensity /= FluidParams::nParticles;
-//			pError = totalDensity - FluidParams::restDensity;
+			vector<Vec3> l_auxVelocity = l_velocity;
+			vector<Vec3> l_auxPos = l_positions;
+			vector<Vec3> l_auxPrevPos = l_positions;
+			vector<float> l_auxDensity = l_density;
 
-			while (iterations < 10 || pError > 100) {
+//			float sDensity = 0;
+//			for (auto d : l_density) {
+//				if (d > 250)
+//					sDensity += d;
+//			}
+//			sDensity /= FluidParams::nParticles;
+////
+////			 cout << "DENSIDAD INICIAL ->> " << sDensity << endl;
+			while (iterations < 3 || MaxpError > 10) {
 
-//				if (iterations > 20)
-//					break;
-
-				Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
+				Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_auxDensity);
 				Integrator::EulerSemi(l_auxPos, l_auxVelocity, l_acceleration);
+//				Integrator::LeapFrog(l_auxPos, l_auxVelocity, l_acceleration, l_auxPrevPos);
 
-//				InternalForces::ComputeDensityDelta(l_density, l_auxDensity, l_pressureForce, l_auxPos, l_neighbors);
-				InternalForces::ComputePressureCorrection(l_density, l_auxDensity, l_pressures, l_auxPos, l_neighbors, pError);
+//				Collision::Collide(l_auxPos, l_auxVelocity, l_bounds);
+				HashTable::InsertParticles(l_auxPos);
+				HashTable::RetrieveNeighbors(l_neighbors, l_auxPos);
 
-//				cout << pError << endl;
+				InternalForces::ComputeMassDensity(l_auxDensity, l_auxPos, l_neighbors);
+				InternalForces::ComputePressureCorrection(l_auxDensity, l_pressures, MaxpError);
 
-				InternalForces::ComputePressureForce(l_density, l_auxPos, l_pressures, l_pressureForce, l_neighbors);
+				InternalForces::ComputePressureForce(l_auxDensity, l_positions, l_pressures, l_pressureForce, l_neighbors);
+
+				l_auxPos = l_positions;
+				l_auxVelocity = l_velocity;
+
+				if (iterations > 2000) {
+					cout << "SALIMOS" << endl;
+					break;
+				}
+
+//				cout << iterations << endl;
 				iterations++;
 			}
 
-//			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevV, isFirst);
+			cout << iterations << endl;
+
 			Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
 			Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
-
+//			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevPos);
 			Collision::Collide(l_positions, l_velocity, l_bounds);
 
 		}
@@ -199,7 +233,7 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 		}
 		sDensity /= FluidParams::nParticles;
 		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
-		cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << endl;
+		cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << "  " << MaxpError << endl;
 
 	}
 }

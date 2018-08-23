@@ -1,49 +1,26 @@
 #include "Integrator.h"
 
-void Integrator::LeapFrog(vector<Vec3> & l_position, vector<Vec3> & l_velocity, vector<Vec3> & l_acceleration,
-		vector<Vec3> & l_prevV, bool & isFirst) {
+void Integrator::LeapFrog(vector<Vec3> & l_position, vector<Vec3> & l_velocity, vector<Vec3> & l_acceleration, vector<Vec3> & l_prevPos) {
 
 	int count = FluidParams::nParticles;
 	float dt = FluidParams::dt;
-//	if (isFirst) {
-//#pragma omp parallel for
-//		for (int i = 0; i < count; i++) {
-//			Vec3 previousV, laterV;
-//			previousV = l_velocity.at(i) - 0.5 * dt * l_acceleration.at(i);
-//			laterV = previousV + l_acceleration.at(i) * dt;
-//			l_prevV.at(i) = laterV;
-//
-//			l_position.at(i) = l_position.at(i) + laterV * dt;
-//			l_velocity.at(i) = (previousV + laterV) * 0.5 + l_acceleration.at(i) * dt;
-//		}
-//		cout << "LeapFrog->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-//		isFirst = false;
-//		return;
-//	}
+	float dt2 = FluidParams::dt2;
 
 #pragma omp parallel for
 	for (int i = 0; i < count; i++) {
-		Vec3 previousV, laterV, AuxPos;
-		previousV = l_velocity.at(i) - 0.5 * dt * l_acceleration.at(i);
-		laterV = previousV + l_acceleration.at(i) * dt;
-//		l_prevV.at(i) = laterV;
-		AuxPos = l_position.at(i) + laterV * dt;
+//		Vec3 last_position = l_position.at(i);
+//
+//		Vec3 pastVelocity = l_prevV.at(i);
+//		Vec3 futureVelocity = pastVelocity + l_acceleration.at(i) * dt;
+//		l_prevV.at(i) = futureVelocity;
+//		l_position.at(i) = l_position.at(i) + futureVelocity * dt;
+//		l_velocity.at(i) = (l_position.at(i) - last_position) / dt;
 
-		//l_velocity.at(i) = (previousV + laterV) * 0.5 + l_acceleration.at(i) * dt;
-		l_velocity.at(i) =  (Vec3::sub(AuxPos, l_position.at(i))) / dt;
-		l_position.at(i) = AuxPos;
+		Vec3 position = l_position.at(i);
+		l_position.at(i) = 2 * position - l_prevPos.at(i) + l_acceleration.at(i) * dt2;
+		l_prevPos.at(i) = position;
+		l_velocity.at(i) = (l_position.at(i) - position) / dt;
 	}
-
-//#pragma omp parallel for
-//	for (int i = 0; i < count; i++) {
-//		Vec3 auxV, auxAcc, auxPos;
-//		auxV = l_velocity.at(i) + l_acceleration.at(i) * dt * 0.5;
-//		auxPos = l_position.at(i) + auxV * dt;
-//		auxAcc = (auxPos - l_position.at(i)) / dt;
-//		l_velocity.at(i) = auxV + auxAcc * dt * 0.5;
-//		l_position.at(i) = auxPos;
-//	}
-	//cout << "LeapFrog" << endl;
 }
 
 void Integrator::EulerSemi(vector<Vec3> & l_position, vector<Vec3> & l_velocity, vector<Vec3> & l_acceleration) {
@@ -71,9 +48,7 @@ void Integrator::EulerSemi(vector<Vec3> & l_position, vector<Vec3> & l_velocity,
 //		l_position.at(i) = l_position.at(i) + (oldVel + l_velocity.at(i)) * 0.5 * dt;
 //	}
 
-
-
-	// cout << "EulerSemi" << endl;
+// cout << "EulerSemi" << endl;
 
 }
 
@@ -85,7 +60,7 @@ void Integrator::ComputeAccelerations(vector<Vec3> & l_acceleration, vector<Vec3
 	for (int i = 0; i < count; i++) {
 		//if (l_density.at(i) > 0.0001)
 		{
-			l_acceleration[i] = ((l_internalForce[i] + l_externalForce[i]) + l_pressureForce[i])/ l_density[i];
+			l_acceleration[i] = ((l_internalForce[i] + l_externalForce[i]) + l_pressureForce[i]) / l_density[i];
 			//l_acceleration[i] = (l_internalForce[i] + l_externalForce[i]) / mass;
 		}
 

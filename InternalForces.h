@@ -13,11 +13,10 @@ class InternalForces {
 public:
 	static void ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors);
 
-	static void ComputeDensityDelta(vector<float> & l_density, vector<float> & l_auxDensity, vector<Vec3> & l_pressureForce, const vector<Vec3> & l_positions,
-			const vector<vector<int>> & l_neighbors);
+	static void ComputeDensityDelta(vector<float> & l_auxDensity, const vector<Vec3> & l_auxPositions, const vector<vector<int>> & l_neighbors);
 
-	static void ComputePressureCorrection(vector<float> & l_density, vector<float> & l_auxDensity, vector<float> & l_pressures, const vector<Vec3> & l_positions,
-			const vector<vector<int>> & l_neighbors, float & pError);
+	static void ComputePressureCorrection(vector<float> & l_auxDensity, vector<float> & l_pressures, float & pError);
+
 	static void ComputePressures(const vector<float> & l_density, vector<float> & l_pressures, float restDensity);
 
 	static void ComputePressureForce(const vector<float> & l_density, const vector<Vec3> & l_positions, const vector<float> & l_pressures,
