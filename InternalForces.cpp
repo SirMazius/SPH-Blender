@@ -1,4 +1,5 @@
 #include "InternalForces.h"
+#include  "FluidParams.h"
 #include "Vec3.h"
 #include "Kernels.h"
 void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors) {
@@ -137,36 +138,7 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 //cout << "ComputePressureForce" << endl;
 }
 
-void InternalForces::ComputePCI_SPH_PressureForce(const vector<float> & l_density, const vector<Vec3> & l_positions, const vector<float> & l_pressures,
-		vector<Vec3> & l_pressureForce, const vector<vector<int>> & l_neighbors) {
 
-	int count = FluidParams::nParticles;
-	float mass = FluidParams::mass;
-#pragma omp parallel for
-	for (int i = 0; i < count; i++) {
-		Vec3 pressureAux;
-		// l_pressureForce.at(i).SetZero();
-		for (int j : l_neighbors[i]) {
-			if (i != j && l_density.at(j) != 0) {
-				Vec3 vAux;
-				Vec3::vDirector(l_positions[j], l_positions[i], vAux);
-//				l_internalForce[i] -= ( ((l_pressures[i] + l_pressures[j]) / (2 * l_density[j])) * mass
-//						* Kernels::SpikyGradient(vAux));
-
-//				l_internalForce.at(i) = l_internalForce.at(i)
-//						- (l_pressures.at(i) + l_pressures.at(j) / 2) * (mass / l_density.at(j))
-//								* Kernels::SpikyGradient(vAux);
-
-				pressureAux = pressureAux
-						+ (l_pressures.at(i) / (l_density.at(i) * l_density.at(i)) + l_pressures.at(j) / (l_density.at(j) * l_density.at(j))) * mass
-								* Kernels::SpikyGradient(vAux);
-
-			}
-		}
-		l_pressureForce.at(i) = pressureAux * -l_density.at(i);
-	}
-//cout << "ComputePressureForce" << endl;
-}
 
 void InternalForces::ComputeViscosityForce(const vector<float> & l_density, vector<Vec3> & l_velocity, vector<Vec3> & l_internalForce,
 		const vector<vector<int>> & l_neighbors, const vector<Vec3> & l_positions) {

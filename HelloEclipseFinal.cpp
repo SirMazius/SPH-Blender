@@ -19,6 +19,8 @@
 #include <chrono>
 #include <algorithm>
 //#include "string"
+#include <Eigen/Dense>
+
 using namespace std;
 using namespace std::chrono;
 
