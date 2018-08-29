@@ -2,6 +2,7 @@
 #include  "FluidParams.h"
 #include "Vec3.h"
 #include "Kernels.h"
+#include <cstddef>
 void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors) {
 
 	int count = FluidParams::nParticles;
@@ -21,20 +22,137 @@ void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<
 	//cout << "ComputeMassDensity" << endl;
 }
 
-void InternalForces::ComputeDensityDelta(vector<float> & l_auxDensity, const vector<Vec3> & l_auxPositions, const vector<vector<int>> & l_neighbors) {
+void InternalForces::ComputeAnisotropyMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors,
+		vector<Vector3d> l_centers, vector<MatrixXd> l_Gs, vector<double> l_det) {
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
-	//float dt2 = FluidParams::dt2;
 
 #pragma omp parallel for
 	for (int i = 0; i < count; i++) {
-		l_auxDensity.at(i) = 0;
+
+		l_density.at(i) = 0;
+		double det = l_det.at(i);
+		MatrixXd G = l_Gs.at(i);
+		Vector3d c = l_centers.at(i);
+
 		for (int j : l_neighbors.at(i)) {
-			Vec3 vDir;
-			Vec3::vDirector(l_auxPositions.at(j), l_auxPositions.at(i), vDir);
-			l_auxDensity.at(i) += mass * Kernels::Value(vDir);
+			Vec3 vAux;
+			Vector3d vEigenAux(c[0] - l_positions.at(j).x, c[1] - l_positions.at(j).y, c[2] - l_positions.at(j).z);
+			Vector3d vDirectorAux = G * vEigenAux;
+			vAux.x = vDirectorAux[0];
+			vAux.y = vDirectorAux[1];
+			vAux.z = vDirectorAux[2];
+			l_density.at(i) += mass * det * Kernels::Value(vAux);
 		}
 	}
+
+	cout << "ComputeAnisotropyMassDensity" << endl;
+}
+
+void InternalForces::GetMatrix(MatrixXd & input, MatrixXd & G, Vector3d & center, double & det, Vector3d & currentPoint) {
+
+	MatrixXd b(2, 3);
+	b << 2.5, 2.4, 7.0, 0.5, 0.7, 3.0;
+	input = b;
+//	if (true) {
+//		// input.rows() < 2
+//		G = Vector3d(1,1,1).asDiagonal();
+////		cout << "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGg" << endl <<G << endl;
+//		center = currentPoint;
+//		det = 1.0;
+//		return;
+//	}
+
+
+	MatrixXd a = input.transpose();
+//	cout << "DIMENSIONES " << a.rows() << "   " << a.cols() << endl;
+
+	VectorXd mean = input.colwise().mean();
+
+	MatrixXd var = (a).colwise() - mean;
+	MatrixXd t = var * var.transpose();
+	MatrixXd dst = t * (1 / (a.cols() - 1)); //S
+//
+
+
+	center = input.colwise().mean();
+//
+	EigenSolver<MatrixXd> es(dst);
+	VectorXcd eigenValues = es.eigenvalues();
+	MatrixXcd eigenVectors = es.eigenvectors();
+	MatrixXd eigenVectorsReal = eigenVectors.real();
+//
+	VectorXcd ab(3);
+	ab[0] = 2 * sqrt(abs(eigenValues[0]));
+	ab[1] = 2 * sqrt(abs(eigenValues[1]));
+	ab[2] = 2 * sqrt(abs(eigenValues[2]));
+	Vector3d abReal = ab.real();
+	for (int i = 0; i < 3; i++)
+		if (abReal[i] <= 0.00000001)
+			abReal[i] = 1;
+
+	Vector3d h;
+	h << FluidParams::kernelRadius, FluidParams::kernelRadius, FluidParams::kernelRadius;
+	Vector3d diagG = h.array() / abReal.array();
+	MatrixXd diagGmatrix = diagG.asDiagonal();
+
+	G = eigenVectorsReal * (diagGmatrix * eigenVectorsReal.transpose());
+	det = diagG[0] * diagG[1] * diagG[2];
+	cout << "DET -> "<< diagG << endl;
+
+//	cout << "-------------------------> " << endl << diagGmatrix << endl;
+	float jja;
+	cin >> jja;
+
+//		cout << "abR ->> " << endl << abReal << endl;
+//		cout << "DiagG ->> " << endl << diagG.asDiagonal() << endl;
+//		cout << "DIMENSIONES " << ab.rows() << "   " << ab.cols() << endl;
+//		std::cout << "AB -> " << endl << ab << std::endl << endl;
+//		cout << "Cov -> " << endl << dst << endl;
+//		cout << c << << endl;
+//		cout << "PseudoEigenValues -> " << endl << pseudoValues << endl;
+//		cout << "PseudoEigenVectors -> " << endl <<  pseudoVectors << endl;
+//		cout << "EigenValues -> " << endl << eigenValues[0].real() << endl;
+//		cout << "EigenVectors -> " << endl << eigenVectors << endl;
+//		cout << "REAL ->> "<<eigenValues.real() << endl;
+//		cout << "IMAG ->> "<<eigenValues.imag() << endl;
+}
+
+void InternalForces::ComputeAnisotropy(const vector<vector<int>> & l_neighbors, const vector<Vec3> & l_positions, vector<Vector3d> & l_centers,
+		vector<MatrixXd> & l_Gs, vector<double> & l_det) {
+	int count = FluidParams::nParticles;
+	float h = FluidParams::kernelRadius;
+
+//#pragma omp parallel for
+	for (int i = 0; i < count; i++) {
+
+		vector<Vector3d> l_points;
+
+		for (int j : l_neighbors.at(i)) {
+			Vec3 vAux;
+			Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
+			if (vAux.mag() <= h) {
+				Vector3d point(l_positions.at(j).x, l_positions.at(j).y, l_positions.at(j).z);
+				l_points.push_back(point);
+			}
+		}
+
+		int auxCounter = l_points.size();
+		MatrixXd points(auxCounter, 3);
+
+		for (int j = 0; j < auxCounter; j++)
+			points.row(j) = l_points.at(j);
+
+		Vector3d center;
+		Vector3d currentPoint(l_positions.at(i).x, l_positions.at(i).y, l_positions.at(i).z);
+		double det;
+		MatrixXd G;
+		GetMatrix(points, G, center, det, currentPoint);
+		l_centers.at(i) = center;
+		l_det.at(i) = det;
+		l_Gs.at(i) = G;
+	}
+	cout << "ComputeAnisotropy" << endl;
 }
 
 void InternalForces::ComputePressureCorrection(vector<float> & l_auxDensity, vector<float> & l_pressures, float & pError) {
@@ -137,8 +255,6 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 	}
 //cout << "ComputePressureForce" << endl;
 }
-
-
 
 void InternalForces::ComputeViscosityForce(const vector<float> & l_density, vector<Vec3> & l_velocity, vector<Vec3> & l_internalForce,
 		const vector<vector<int>> & l_neighbors, const vector<Vec3> & l_positions) {

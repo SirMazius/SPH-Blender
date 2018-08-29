@@ -19,20 +19,95 @@
 #include <chrono>
 #include <algorithm>
 //#include "string"
-#include <Eigen/Dense>
 
 using namespace std;
 using namespace std::chrono;
 
+//void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
+//		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
+//		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
+
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
-		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
+		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
+		vector<double> & l_det);
 
 void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressureForce, vector<Vec3> & l_positions, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
 
 int main() {
+
+//	MatrixXd b(2, 2);
+////	int x = 3, y = 10;
+//
+////	MatrixXf c(x,y);
+////	for (int i = 0; i<x; i++)
+////		for (int j = 0; j < y; j++)
+////			c(i,j) = 1;
+////	cout << c << endl << endl;
+//
+////	b << 2.5, 2.4, 0.5, 0.7;
+//	b << 2.5, 2.4, 7.0, 0.5, 0.7, 3.0;
+////	cout << b << endl;
+//	MatrixXd a = b.transpose();
+//
+//	VectorXd mean = (a).rowwise().mean();
+//	MatrixXd var = (a).colwise() - mean;
+//	MatrixXd t = var * var.transpose();
+//	MatrixXd dst = t * (1 / (a.cols() - 1)); //S
+//
+//	VectorXd c = b.colwise().mean();
+//
+//	EigenSolver<MatrixXd> es(dst);
+//	VectorXcd eigenValues = es.eigenvalues();
+//	MatrixXcd eigenVectors = es.eigenvectors();
+//	MatrixXd eigenVectorsReal = eigenVectors.real();
+////	MatrixXd pseudoVectors = es.pseudoEigenvectors();
+////	MatrixXd pseudoValues = es.pseudoEigenvalueMatrix();
+//
+//	VectorXcd ab(3, 1);
+//	ab[0] = 2 * sqrt(abs(eigenValues[0]));
+//	ab[1] = 2 * sqrt(abs(eigenValues[1]));
+//	ab[2] = 2 * sqrt(abs(eigenValues[2]));
+//
+//
+//
+//	Vector3d abReal = ab.real();
+////	abReal[0] = ab[0].real();
+////	abReal[1] = ab[1].real();
+////	abReal[2] = ab[2].real();
+//
+//	for (int i = 0; i < 3; i++)
+//		if (abReal[i] <= 0.00000001)
+//			abReal[i] = 1;
+//
+//	Vector3d h;
+//	h << 0.045, 0.045, 0.045;
+//	Vector3d diagG = h.array() / abReal.array();
+//	MatrixXd diagGmatrix = diagG.asDiagonal();
+//	MatrixXd G = eigenVectorsReal * (diagGmatrix * eigenVectorsReal.transpose());
+//
+//	cout << "abR ->> " << endl << abReal << endl;
+//
+////	cout << "DiagG ->> " << endl << diagG.asDiagonal() << endl;
+//
+//	cout << "DIMENSIONES " << ab.rows() << "   " << ab.cols() << endl;
+//
+//	std::cout << "AB -> " << endl << ab << std::endl << endl;
+//	cout << "Cov -> " << endl << dst << endl;
+////	cout << c << << endl;
+////	cout << "PseudoEigenValues -> " << endl << pseudoValues << endl;
+////	cout << "PseudoEigenVectors -> " << endl <<  pseudoVectors << endl;
+////	cout << "EigenValues -> " << endl << eigenValues[0].real() << endl;
+//	cout << "EigenVectors -> " << endl << eigenVectors << endl;
+//
+////	cout << "REAL ->> "<<eigenValues.real() << endl;
+////	cout << "IMAG ->> "<<eigenValues.imag() << endl;
+//
+//	float sss;
+//	cin >> sss;
+
 	struct timespec start, stop;
 
 	Vec3 l_bounds[2];
@@ -60,7 +135,11 @@ int main() {
 			FluidParams::nParticles), l_acceleration(FluidParams::nParticles), l_prevV(FluidParams::nParticles);
 	vector<float> l_density(FluidParams::nParticles), l_pressures(FluidParams::nParticles), l_color(FluidParams::nParticles);
 	vector<vector<int>> l_neighbors(FluidParams::nParticles);
+
 	//bool isFirst = true;
+	vector<Vector3d> l_centers(FluidParams::nParticles);
+	vector<double> l_det(FluidParams::nParticles);
+	vector<MatrixXd> l_Gs(FluidParams::nParticles);
 //
 	clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &start);
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -79,11 +158,11 @@ int main() {
 	cout << "TENSION ->> " << FluidParams::surfaceTension << endl;
 	cout << "PARTICLE RADIUS ->> " << FluidParams::particleRadius << endl;
 
-//	Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
-//			l_color, name, l_bounds);
+	Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
+			l_color, name, l_bounds, l_centers, l_Gs, l_det);
 
-	Compute_PCI_SPH(l_neighbors, l_pressureForce, l_positions, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
-			l_color, name, l_bounds);
+//	Compute_PCI_SPH(l_neighbors, l_pressureForce, l_positions, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
+//			l_color, name, l_bounds);
 
 	clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &stop);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -98,7 +177,8 @@ int main() {
 
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
-		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]) {
+		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
+		vector<double> & l_det) {
 
 	vector<Vec3> l_prevPos(FluidParams::nParticles);
 	l_prevPos = l_positions;
@@ -109,7 +189,9 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 			HashTable::InsertParticles(l_positions);
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
 
-			InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
+			InternalForces::ComputeAnisotropy(l_neighbors, l_positions, l_centers, l_Gs, l_det);
+			InternalForces::ComputeAnisotropyMassDensity(l_density, l_positions, l_neighbors, l_centers, l_Gs, l_det);
+//			InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
 
 //			float sDensity = 0;
 //			for (auto d : l_density) {
