@@ -22,6 +22,8 @@ public:
 	static float fluidVolume;
 	static float beta;
 	static float particleRadius;
+	static float particleVolume;
+	static float particleOffset;
 	static float pciKernelFactor;
 
 	static void Initialize(/*int _nParticles, float _restDensity, float _mass,

@@ -50,7 +50,7 @@ void ExternalForces::ComputeColorField(const vector<float> &l_density, const vec
 	//cout << "ComputeColorField" << endl;
 }
 
-void ExternalForces::ComputeSurfaceTension(const vector<float> &l_color, const vector<Vec3> &l_normals,
+void ExternalForces::ComputeSurfaceTension(vector <float> & l_density, vector <float> & l_densityBorder, const vector<float> &l_color, const vector<Vec3> &l_normals,
 		vector<Vec3> & l_externalForce) {
 	float threshold = FluidParams::threshold;
 	float sigma = FluidParams::surfaceTension;
@@ -62,6 +62,7 @@ void ExternalForces::ComputeSurfaceTension(const vector<float> &l_color, const v
 		float AuxNormalValue = AuxNormal.mag();
 		if (AuxNormalValue > threshold && abs(AuxNormalValue > 0)) {
 			l_externalForce[i] += -sigma * l_color[i] * (AuxNormal / AuxNormalValue);
+			l_densityBorder[i] = l_density[i];
 		}
 	}
 	//cout << "ComputeSurfaceTension" << endl;

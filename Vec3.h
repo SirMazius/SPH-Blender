@@ -8,7 +8,9 @@ public:
 	Vec3(float, float, float);
 	~Vec3();
 
-	Vec3 normalize();
+	inline Vec3 normalize() {
+		return Vec3(this->x, this->y,this->z) / mag();
+	}
 	inline static float dist(Vec3 & v1, Vec3 & v2) {
 		return sqrt(pow(v2.x - v1.x, 2) + pow(v2.y - v1.y, 2) + pow(v2.z - v1.z, 2));
 	}

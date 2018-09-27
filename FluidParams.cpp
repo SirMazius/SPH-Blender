@@ -17,6 +17,8 @@ float FluidParams::kernelRadius = 0;
 float FluidParams::fluidVolume = 0;
 float FluidParams::beta = 0;
 float FluidParams::particleRadius = 0;
+float FluidParams::particleVolume = 0;
+float FluidParams::particleOffset = 0;
 float FluidParams::pciKernelFactor = 0;
 
 void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
@@ -44,8 +46,9 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 
 	beta = dt2 * mass * mass * 2 / (restDensity * restDensity);
 	particleRadius = cbrt(pow(kernelRadius, 3) / kernelParticles);
-
-
+	particleVolume = 4.0 / 3.0 * 3.14159 * pow(particleRadius,3);
+	//self.particle_offset = (3.0/(4.0*np.pi)*self.particle_volume)**(1.0/3.0)
+	particleOffset = pow(3.0 / (4.0*3.14159) * particleVolume,1.0/3.0);
 //	Vec3 sum1, sum2;
 //
 //	float sum3 = 0, h = kernelRadius, pH = particleRadius;

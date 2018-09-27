@@ -1,7 +1,7 @@
 #include "BlenderIO.h"
 unordered_map<string, string> BlenderIO::parametersMap;
-vector<string> BlenderIO::l_parameters { "name", "nparts", "particle_volume", "kernel_parts", "tini", "tfin", "tstep",
-		"density", "visco", "stiff", "surften", "surften_threshold", "collision_restitution" };
+vector<string> BlenderIO::l_parameters { "name", "nparts", "particle_volume", "kernel_parts", "tini", "tfin", "tstep", "density", "visco", "stiff", "surften",
+		"surften_threshold", "collision_restitution" };
 bool BlenderIO::ReadParams(string fileName, Vec3 l_bounds[2]) {
 	ifstream myFile;
 	string word;
@@ -14,8 +14,7 @@ bool BlenderIO::ReadParams(string fileName, Vec3 l_bounds[2]) {
 			for (string s : l_parameters)
 				if (word.find(s + "=") != std::string::npos) {
 					//cout << word.substr(string(s+"=").size(), string(s +"=").size() - word.size()) << endl;
-					std::pair<string, string> parameter(s,
-							word.substr(string(s + "=").size(), string(s + "=").size() - word.size()));
+					std::pair<string, string> parameter(s, word.substr(string(s + "=").size(), string(s + "=").size() - word.size()));
 					parametersMap.insert(parameter);
 				}
 		}
@@ -32,8 +31,7 @@ bool BlenderIO::ReadParams(string fileName, Vec3 l_bounds[2]) {
 			for (string s : l_parameters)
 				if (word.find(s + "=") != std::string::npos) {
 					//cout << word.substr(string(s+"=").size(), string(s +"=").size() - word.size()) << endl;
-					std::pair<string, string> parameter(s,
-							word.substr(string(s + "=").size(), string(s + "=").size() - word.size()));
+					std::pair<string, string> parameter(s, word.substr(string(s + "=").size(), string(s + "=").size() - word.size()));
 					parametersMap.insert(parameter);
 				}
 		}
@@ -163,8 +161,7 @@ int countDigits(int i) {
 	return count;
 }
 
-void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3> & l_positions,
-		vector<Vec3> & l_velocity) {
+void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3> & l_positions, vector<Vec3> & l_velocity) {
 
 	ofstream myfile;
 
@@ -186,4 +183,24 @@ void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3> & 
 	}
 	myfile.close();
 	cout << "WritePOSVEL" << endl;
+}
+
+void BlenderIO::WriteExcelData(string fileName, float deepDensity, float surfaceDensity, float executionTime) {
+
+	ofstream myFileOutput;
+	ifstream myFileInput;
+	myFileInput.open(fileName + ".csv");
+
+	if (!myFileInput) {
+		myFileInput.close();
+		myFileOutput.open(fileName + ".csv");
+//		cout << "CREAMOS" << endl;
+		myFileOutput << deepDensity << "," << surfaceDensity << "\n";
+		myFileOutput.close();
+	} else {
+//		cout << "Ya está creado" << endl;
+		myFileOutput.open(fileName + ".csv", fstream::app);
+		myFileOutput << deepDensity << "," << surfaceDensity << "\n";
+		myFileOutput.close();
+	}
 }
