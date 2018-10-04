@@ -35,12 +35,13 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressureForce, vector<Vec3> & l_positions, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
+
 int mode, test;
+
 int main(int argc, char *argv[]) {
 	cout << "ATOOOOI ->>> " << atoi(argv[1]) << endl;
 	//BlenderIO::WriteExcelData("ExampleFile", 10, 10, 10);
-//	float jajaja;
-//	cin >> jajaja;
+
 	if (argc == 3) {
 		mode = atoi(argv[1]);
 		test = atoi(argv[2]);
@@ -77,7 +78,6 @@ int main(int argc, char *argv[]) {
 	vector<Vec3> l_positions, l_velocity;
 	cout << "INTRODUZCA NOMBRE DE FICHERO" << endl << endl;
 	string name = "Matias1";
-	//cin >> name;
 
 	if (!BlenderIO::ReadParams(name, l_bounds)) {
 		cout << "ERRROROROROOROROROROROR PARAMS" << endl;
@@ -120,16 +120,16 @@ int main(int argc, char *argv[]) {
 	cout << "THRESHOLD ->> " << FluidParams::threshold << endl;
 	cout << "TENSION ->> " << FluidParams::surfaceTension << endl;
 	cout << "PARTICLE RADIUS ->> " << FluidParams::particleRadius << endl;
-//
-	if (mode == 0 || mode == 1)
+
+	if (mode == 0 || mode == 1) {
 		Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
 				l_color, name, l_bounds, l_centers, l_Gs, l_det);
-//////
-	else if (mode == 2)
+	} else if (mode == 2) {
 		Compute_PCI_SPH(l_neighbors, l_pressureForce, l_positions, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density,
 				l_pressures, l_color, name, l_bounds);
-	else
+	} else {
 		cout << "Not correct mode selected" << endl;
+	}
 
 	clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &stop);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 	cout << "NEW DURATION-->>> " << duration << " " << duration / 1000000 << endl;
 	ofstream timeFile;
 	timeFile.open("Time");
-		timeFile << duration / 1000000;
+	timeFile << duration / 1000000;
 	timeFile.close();
 	return 0;
 }
@@ -151,24 +151,25 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
 		vector<double> & l_det) {
 
+	int counter = 0;
+
 	vector<Vec3> l_prevPos(FluidParams::nParticles);
 	l_prevPos = l_positions;
 	vector<float> l_densityBorder(FluidParams::nParticles);
-	for (int i = 1; i < FluidParams::simulationSteps; i++) {
 
+	for (int i = 1; i < FluidParams::simulationSteps; i++) {
+		high_resolution_clock::time_point t3 = high_resolution_clock::now();
 		for (int j = 0; j < 10; j++) {
 
 			HashTable::InsertParticles(l_positions);
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
-////
+
 			if (mode == 1) {
 				InternalForces::ComputeAnisotropy(l_neighbors, l_positions, l_centers, l_Gs, l_det);
 				InternalForces::ComputeAnisotropyMassDensity(l_density, l_positions, l_neighbors, l_centers, l_Gs, l_det);
 			} else {
 				InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
 			}
-
-//
 
 //			float sDensity = 0;
 //			for (auto d : l_density) {
@@ -206,7 +207,6 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 
 		}
 		sDensity /= densityCounter;
-		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
 
 		float densityBorder = 0;
 		int borderCounter = 0;
@@ -219,8 +219,20 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		densityBorder /= borderCounter;
 		cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << " " << densityBorder << endl;
 
+		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
 		BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
 
+		if (counter == 50) {
+			BlenderIO::WriteHeightDensityData(l_positions, l_density, counter);
+			counter = 0;
+		}
+
+		counter++;
+		high_resolution_clock::time_point t4 = high_resolution_clock::now();
+		auto duration = duration_cast<microseconds>(t4 - t3).count();
+		cout << "NEW DURATION-->>> " << duration << " " << duration / 1000000 << endl;
+		float exsaif;
+		cin >> exsaif;
 	}
 }
 
@@ -329,4 +341,3 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 		BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
 	}
 }
-

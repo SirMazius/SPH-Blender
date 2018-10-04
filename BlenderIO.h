@@ -17,6 +17,7 @@ public:
 	static bool ReadPOSVEL(string fileName, vector<Vec3> & l_pos, vector<Vec3> & l_velocity);
 	static void WritePOSVEL(string name, float t, int iteration, vector<Vec3> & l_pos, vector<Vec3> & l_velocity);
 	static void WriteExcelData(string name, float deepDensity, float surfaceDensity, float executionTime);
+	static void WriteHeightDensityData(vector<Vec3> & l_positions, vector<float> & l_density, int iteration);
 
 	static unordered_map<string, string> parametersMap;
 	static vector<string> l_parameters;
