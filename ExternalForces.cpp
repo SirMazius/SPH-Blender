@@ -1,9 +1,9 @@
 #include "ExternalForces.h"
 
-void ExternalForces::ComputeGravity(vector<Vec3> &l_externalForce, const vector<float> &l_density) {
+void ExternalForces::ComputeGravity(vector<Vec3> &l_externalForce, const vector<float> &l_density) { // @suppress("Member declaration not found")
 
 	int count = FluidParams::nParticles;
-	Vec3 gravity(0.0, 0.0, -4.8);
+	Vec3 gravity(0.0, 0.0, -9.8);
 //	Vec3 gravity(0.0, 0.0, 0.0);
 //	Vec3 gravity(0.0, 0.0, -9.8);
 

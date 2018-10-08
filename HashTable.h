@@ -15,6 +15,7 @@ public:
 	static Vec3 Discretize(const Vec3 & pos);
 	static void InsertParticles(const vector<Vec3> & l_pos);
 	static void ClearTable();
+	static void ClearTableX();
 	static void RetrieveNeighbors(vector<vector<int>> & l, const vector<Vec3> & l_position);
 private:
 	static int NextPrime(int);

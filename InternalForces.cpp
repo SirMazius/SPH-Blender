@@ -56,13 +56,12 @@ void InternalForces::GetMatrix(MatrixXd & input, MatrixXd & G, Vector3d & center
 //	b << 2.5, 2.4, 7.0, 0.5, 0.7, 3.0;
 //	input = b;
 	if (input.rows() < 10) {
-		G = Vector3d(1,1,1).asDiagonal();
+		G = Vector3d(1, 1, 1).asDiagonal();
 //		cout << "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGg" << endl <<G << endl;
 		center = currentPoint;
 		det = 1.0;
 		return;
 	}
-
 
 	MatrixXd a = input.transpose();
 	VectorXd mean = input.colwise().mean();
@@ -88,7 +87,7 @@ void InternalForces::GetMatrix(MatrixXd & input, MatrixXd & G, Vector3d & center
 //	h << FluidParams::kernelRadius, FluidParams::kernelRadius, FluidParams::kernelRadius;
 //	h << 0.045, 0.045, 0.045;
 	// Vector3d diagG = h.array() / ab.array();
-	Vector3d diagG(1.0/ab[0], 1.0/ab[1], 1.0/ab[2]);
+	Vector3d diagG(1.0 / ab[0], 1.0 / ab[1], 1.0 / ab[2]);
 	MatrixXd diagGmatrix = diagG.asDiagonal();
 
 	G = eigenVectors * (diagGmatrix * eigenVectors.transpose());
@@ -188,8 +187,7 @@ void InternalForces::ComputePressureCorrection(vector<float> & l_auxDensity, vec
 	for (int i = 0; i < count; i++) {
 		float error = max(0.0f, l_auxDensity.at(i) - restDensity);
 		float errorpercent = (error * 100) / restDensity;
-		if (errorpercent < 30/*30*/)
-		{
+		if (errorpercent < 30/*30*/) {
 			l_error.at(i) = error;
 			l_pressures.at(i) += factor * (error);
 		}
@@ -231,25 +229,23 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 #pragma omp parallel for
 	for (int i = 0; i < count; i++) {
 		Vec3 pressureAux;
+		float density_i = l_density.at(i);
+
 		// l_pressureForce.at(i).SetZero();
 		for (int j : l_neighbors[i]) {
-			if (i != j && l_density.at(j) != 0) {
+			float density_j = l_density.at(j);
+			if (i != j) {
 				Vec3 vAux;
 				Vec3::vDirector(l_positions[j], l_positions[i], vAux);
-//				l_internalForce[i] -= ( ((l_pressures[i] + l_pressures[j]) / (2 * l_density[j])) * mass
-//						* Kernels::SpikyGradient(vAux));
-
-//				l_internalForce.at(i) = l_internalForce.at(i)
-//						- (l_pressures.at(i) + l_pressures.at(j) / 2) * (mass / l_density.at(j))
-//								* Kernels::SpikyGradient(vAux);
 
 				pressureAux = pressureAux
-						+ (l_pressures.at(i) / (l_density.at(i) * l_density.at(i)) + l_pressures.at(j) / (l_density.at(j) * l_density.at(j))) * mass
+						+ (l_pressures.at(i) / (density_i * density_i) + l_pressures.at(j) / (density_j * density_j)) * mass
 								* Kernels::SpikyGradient(vAux);
 
 			}
+
 		}
-		l_pressureForce.at(i) = pressureAux * -l_density.at(i);
+		l_pressureForce.at(i) = pressureAux * -density_i;
 	}
 //cout << "ComputePressureForce" << endl;
 }

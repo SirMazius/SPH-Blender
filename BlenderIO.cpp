@@ -160,8 +160,9 @@ int countDigits(int i) {
 	}
 	return count;
 }
-
-void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3> & l_positions, vector<Vec3> & l_velocity) {
+void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3>  l_positions, vector<Vec3>  l_velocity)
+//void BlenderIO::WritePOSVEL(string name, float t, int iteration, vector<Vec3> & l_positions, vector<Vec3> & l_velocity)
+{
 
 	ofstream myfile;
 

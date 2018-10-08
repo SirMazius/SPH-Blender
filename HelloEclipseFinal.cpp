@@ -18,6 +18,7 @@
 #include "Collision.h"
 #include <chrono>
 #include <algorithm>
+#include <future>
 //#include "string"
 
 using namespace std;
@@ -38,14 +39,20 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 
 int mode, test;
 
+void add(int x, int y) {
+//    return x+y;
+}
+
 int main(int argc, char *argv[]) {
 	cout << "ATOOOOI ->>> " << atoi(argv[1]) << endl;
 	//BlenderIO::WriteExcelData("ExampleFile", 10, 10, 10);
 
 	if (argc == 3) {
+
 		mode = atoi(argv[1]);
 		test = atoi(argv[2]);
 		cout << "MODE " << mode << endl;
+
 		switch (mode) {
 		case 0:
 			cout << "EXECUTING SPH" << endl;
@@ -61,18 +68,11 @@ int main(int argc, char *argv[]) {
 			return 0;
 			break;
 		}
+
 	} else {
 		cout << "Error" << endl;
 		return 0;
 	}
-
-	struct timespec start, stop;
-
-//	if (mode == 4) {
-//		cout << "MODO DE SIMULACION" << endl;
-//		cout << "0) SPH" << endl << "1) A-SPH" << endl << "2) PCI-SPH" << endl;
-//		cin >> mode;
-//	}
 
 	Vec3 l_bounds[2];
 	vector<Vec3> l_positions, l_velocity;
@@ -104,7 +104,6 @@ int main(int argc, char *argv[]) {
 	vector<double> l_det(FluidParams::nParticles);
 	vector<MatrixXd> l_Gs(FluidParams::nParticles);
 //
-	clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &start);
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	cout << endl;
 
@@ -131,13 +130,10 @@ int main(int argc, char *argv[]) {
 		cout << "Not correct mode selected" << endl;
 	}
 
-	clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &stop);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	double accum = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec * 1e-9 - start.tv_nsec * 1e-9);
 	auto duration = duration_cast<microseconds>(t2 - t1).count();
 
 	cout << endl << endl << endl << "EXITO" << endl;
-	printf("%lf\n", accum);
 	cout << "NEW DURATION-->>> " << duration << " " << duration / 1000000 << endl;
 	ofstream timeFile;
 	timeFile.open("Time");
@@ -151,7 +147,8 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
 		vector<double> & l_det) {
 
-	int counter = 0;
+	int heightCounter = 50, auxHeightCounter = 0;
+	double accumTime = 0;
 
 	vector<Vec3> l_prevPos(FluidParams::nParticles);
 	l_prevPos = l_positions;
@@ -170,15 +167,6 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 			} else {
 				InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
 			}
-
-//			float sDensity = 0;
-//			for (auto d : l_density) {
-//				if (d > 250)
-//					sDensity += d;
-//			}
-//			sDensity /= FluidParams::nParticles;
-//
-//			cout << sDensity << endl;
 
 			InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
 			InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_pressureForce, l_neighbors);
@@ -219,20 +207,24 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		densityBorder /= borderCounter;
 		cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << " " << densityBorder << endl;
 
-		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
-		BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
+//		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
+//		BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
 
-		if (counter == 50) {
-			BlenderIO::WriteHeightDensityData(l_positions, l_density, counter);
-			counter = 0;
-		}
+//		if (heightCounter == 50) {
+//			BlenderIO::WriteHeightDensityData(l_positions, l_density, auxHeightCounter);
+//			auxHeightCounter++;
+//			heightCounter = 0;
+//		}
+//		heightCounter++;
+		std::future<void> fut = std::async(std::launch::async, BlenderIO::WritePOSVEL, name, i * FluidParams::dt, i, l_positions, l_velocity);
 
-		counter++;
 		high_resolution_clock::time_point t4 = high_resolution_clock::now();
 		auto duration = duration_cast<microseconds>(t4 - t3).count();
 		cout << "NEW DURATION-->>> " << duration << " " << duration / 1000000 << endl;
-		float exsaif;
-		cin >> exsaif;
+		accumTime += duration;
+		cout << "ACCUM DURATION -->>> " << accumTime / 1000000 << endl;
+//		float exsaif;
+//		cin >> exsaif;
 	}
 }
 

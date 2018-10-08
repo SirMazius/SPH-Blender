@@ -9,7 +9,7 @@ void Collision::Collide(vector<Vec3> & l_positions, vector<Vec3> & l_velocity, V
 
 		Vec3 *pos = &l_positions[i];
 		Vec3 *vel = &l_velocity[i];
-		const float b = 0.95;
+		const float b = 0.9999;
 
 		if (pos->x < box[0].x) {
 			pos->x = box[0].x;

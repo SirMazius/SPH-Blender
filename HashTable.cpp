@@ -47,7 +47,7 @@ void HashTable::InsertParticles(const vector<Vec3> & l_pos) {
 	ClearTable();
 	for (const Vec3 & p : l_pos) {
 
-		auxV = Discretize(p);
+		Discretize(p, auxV);
 		int index = Hash(auxV);
 		buckets.at(index).push_back(count);
 		count++;
@@ -61,6 +61,13 @@ void HashTable::InsertParticles(const vector<Vec3> & l_pos) {
 void HashTable::ClearTable() {
 	for (vector<int> & v : buckets)
 		v.clear();
+}
+
+void HashTable::ClearTableX() { // MAS LENTA
+#pragma omp parallel for
+	for (int i = 0; i < size; i++) {
+		buckets.at(i).clear();
+	}
 }
 
 int HashTable::NextPrime(int n) { // HAY QUE PASARLE EL SIZE QUE TOQUE
@@ -105,6 +112,7 @@ void HashTable::RetrieveNeighbors(vector<vector<int>> & l_neighbors, const vecto
 
 	int count = FluidParams::nParticles;
 	double hLenght = FluidParams::kernelRadius;
+
 #pragma omp parallel for
 	for (int i = 0; i < count; i++) {
 		Vec3 bbMin, bbMax, vAux;
