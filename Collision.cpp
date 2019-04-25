@@ -1,5 +1,5 @@
 #include "Collision.h"
-#include "Vec3.h"
+
 void Collision::Collide(vector<Vec3> & l_positions, vector<Vec3> & l_velocity, Vec3 box[2], int testNumber) {
 	int count = FluidParams::nParticles;
 	float restitution = FluidParams::restitutionCoef;

@@ -1,6 +1,6 @@
 #include "FluidParams.h"
-#include "BlenderIO.h"
-#include <string>
+//#include "BlenderIO.h"
+//#include <string>
 int FluidParams::nParticles = 0;
 int FluidParams::simulationSteps = 0;
 float FluidParams::dt = 0;
@@ -32,7 +32,7 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 	dt = stof(BlenderIO::parametersMap.find("tstep")->second);
 	dt2 = dt * dt;
 	restDensity = stof(BlenderIO::parametersMap.find("density")->second);
-	mass = 0.02;//0.02;
+	mass = 0.01;//0.0208;
 	viscosity = stof(BlenderIO::parametersMap.find("visco")->second);
 	surfaceTension = stof(BlenderIO::parametersMap.find("surften")->second);
 

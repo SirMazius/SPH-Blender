@@ -1,9 +1,6 @@
 #include "InternalForces.h"
-#include  "FluidParams.h"
-#include "Vec3.h"
-#include "Kernels.h"
-#include <cstddef>
-void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors) {
+
+void InternalForces::ComputeMassDensity(vector<float> & l_density, const vector<Vec3> & l_positions, const vector<vector<int>> & l_neighbors) { // @suppress("Type cannot be resolved")
 
 	int count = FluidParams::nParticles;
 	float mass = FluidParams::mass;
@@ -156,7 +153,7 @@ void InternalForces::ComputePressureCorrection(vector<float> & l_auxDensity, vec
 
 	Vec3 sum1, sum2;
 	const Vec3 center;
-	float mass2 = FluidParams::mass * FluidParams::mass;
+	//float mass2 = FluidParams::mass * FluidParams::mass;
 	float sum3 = 0, h = FluidParams::kernelRadius, pH = FluidParams::particleRadius, beta = FluidParams::beta, restDensity = FluidParams::restDensity;
 	int count = FluidParams::nParticles;
 	int count2 = 0;
@@ -187,7 +184,7 @@ void InternalForces::ComputePressureCorrection(vector<float> & l_auxDensity, vec
 	for (int i = 0; i < count; i++) {
 		float error = max(0.0f, l_auxDensity.at(i) - restDensity);
 		float errorpercent = (error * 100) / restDensity;
-		if (errorpercent < 30/*30*/) {
+		if (errorpercent < 25.0f) {
 			l_error.at(i) = error;
 			l_pressures.at(i) += factor * (error);
 		}
@@ -239,8 +236,7 @@ void InternalForces::ComputePressureForce(const vector<float> & l_density, const
 				Vec3::vDirector(l_positions[j], l_positions[i], vAux);
 
 				pressureAux = pressureAux
-						+ (l_pressures.at(i) / (density_i * density_i) + l_pressures.at(j) / (density_j * density_j)) * mass
-								* Kernels::SpikyGradient(vAux);
+						+ (l_pressures.at(i) / (density_i * density_i) + l_pressures.at(j) / (density_j * density_j)) * mass * Kernels::SpikyGradient(vAux);
 
 			}
 

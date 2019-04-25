@@ -206,7 +206,7 @@ void BlenderIO::WriteExcelData(string fileName, float deepDensity, float surface
 	}
 }
 
-void BlenderIO::WriteHeightDensityData(vector<Vec3> & l_positions, vector<float> & l_density, int iteration) {
+void BlenderIO::WriteHeightDensityData(vector<Vec3> l_positions, vector<float> l_density, int iteration) {
 	ofstream myfile;
 	int size = l_positions.size();
 	const string fileName = "HeightDensity";
@@ -214,7 +214,7 @@ void BlenderIO::WriteHeightDensityData(vector<Vec3> & l_positions, vector<float>
 	myfile.open(fileName + to_string(iteration) + ".csv");
 
 	for (int i = 0; i < size; i++) {
-		myfile << to_string(l_positions.at(i).y) << "," << l_density.at(i) << "\n";
+		myfile << to_string(l_positions.at(i).x) << "," << to_string(l_positions.at(i).y) << "," << to_string(l_positions.at(i).z) << "," << l_density.at(i) << "\n";
 	}
 
 	myfile.close();
