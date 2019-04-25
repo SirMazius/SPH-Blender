@@ -1,6 +1,4 @@
 #include "FluidParams.h"
-//#include "BlenderIO.h"
-//#include <string>
 int FluidParams::nParticles = 0;
 int FluidParams::simulationSteps = 0;
 float FluidParams::dt = 0;
@@ -21,12 +19,7 @@ float FluidParams::particleVolume = 0;
 float FluidParams::particleOffset = 0;
 float FluidParams::pciKernelFactor = 0;
 
-void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
- float _viscosity, float _surfaceTension, float _threshold,
- float _stiffness, float _restitutionCoef, float _kernelParticles,
- float _kernelRadius*/) {
-
-//	std::unordered_map<std::string,double>::const_iterator got =
+void FluidParams::Initialize() {
 
 	nParticles = stoi(BlenderIO::parametersMap.find("nparts")->second);
 	dt = stof(BlenderIO::parametersMap.find("tstep")->second);
@@ -47,28 +40,5 @@ void FluidParams::Initialize(/*int _nParticles, float _restDensity, float _mass,
 	beta = dt2 * mass * mass * 2 / (restDensity * restDensity);
 	particleRadius = cbrt(pow(kernelRadius, 3) / kernelParticles);
 	particleVolume = 4.0 / 3.0 * 3.14159 * pow(particleRadius,3);
-	//self.particle_offset = (3.0/(4.0*np.pi)*self.particle_volume)**(1.0/3.0)
 	particleOffset = pow(3.0 / (4.0*3.14159) * particleVolume,1.0/3.0);
-//	Vec3 sum1, sum2;
-//
-//	float sum3 = 0, h = kernelRadius, pH = particleRadius;
-//
-//	float multi = 2.0;
-//
-//	for (float x = -h - pH; x <= h + pH; x += multi * pH) {
-//		for (float y = -h - pH; y <= h + pH; y += multi * pH) {
-//			for (float z = -h - pH; z <= h + pH; z += multi * pH) {
-//
-//				Vec3 r(x, y, z);
-//				Vec3 vDir;
-//				// Vec3::vDirector(r, center, vDir);
-//				Vec3 grad = Kernels::SpikyGradient(r);
-//				sum1 -= grad;
-//				sum2 += grad;
-//				sum3 += Vec3::Dot(grad, grad);
-//			}
-//		}
-//	}
-//	pciKernelFactor = -1 / (beta * (Vec3::Dot(sum1, sum2) - sum3));
-//	cout << "FACTOR" << pciKernelFactor << endl;
 }

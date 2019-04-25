@@ -10,15 +10,9 @@ void HashTable::Initialize() {
 	size = NextPrime(FluidParams::nParticles * 2); //TEMPORAL
 	l = FluidParams::kernelRadius;
 	buckets = vector<vector<int>>(size);
-//	buckets.at(10).push_back(2);
 }
 
 int HashTable::Hash(const Vec3 & pos) {
-//	int rX, rY, rZ;
-//
-//	rX = (int) pos.x * p1;
-//	rY = (int) pos.y * p2;
-//	rZ = (int) pos.z * p3;
 
 	unsigned int h = (((int) pos.x) * 73856093) ^ (((int) pos.y) * 19349663) ^ (((int) pos.z) * 83492791);
 	h %= size;
@@ -53,9 +47,6 @@ void HashTable::InsertParticles(const vector<Vec3> & l_pos) {
 		count++;
 	}
 
-//	for (auto & bucket : buckets)
-//		for (auto index : bucket)
-//			cout << index << endl;
 }
 
 void HashTable::ClearTable() {
@@ -128,7 +119,6 @@ void HashTable::RetrieveNeighbors(vector<vector<int>> & l_neighbors, const vecto
 		bbMax.z = pos->z + hLenght;
 		bbMax = Discretize(bbMax);
 
-		//ClearTable();
 		l_neighbors.at(i).clear();
 
 		for (vAux.x = bbMin.x; vAux.x <= bbMax.x; vAux.x++) {

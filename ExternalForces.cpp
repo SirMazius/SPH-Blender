@@ -29,7 +29,7 @@ void ExternalForces::ComputeInwardNormal(const vector<float> &l_density, const v
 			l_normals[i] += (mass / l_density[j]) * Kernels::ValueGradient(vAux);
 		}
 	}
-	//cout << "ComputeInwardNormal" << endl;
+	// cout << "ComputeInwardNormal" << endl;
 }
 
 void ExternalForces::ComputeColorField(const vector<float> &l_density, const vector<vector<int>> & l_neighbors,
@@ -45,7 +45,7 @@ void ExternalForces::ComputeColorField(const vector<float> &l_density, const vec
 			l_color[i] += (mass / l_density[j]) * Kernels::ValueLaplacian(vAux);
 		}
 	}
-	//cout << "ComputeColorField" << endl;
+	// cout << "ComputeColorField" << endl;
 }
 
 void ExternalForces::ComputeSurfaceTension(vector <float> & l_density, vector <float> & l_densityBorder, const vector<float> &l_color, const vector<Vec3> &l_normals,
@@ -63,5 +63,5 @@ void ExternalForces::ComputeSurfaceTension(vector <float> & l_density, vector <f
 			l_densityBorder[i] = l_density[i];
 		}
 	}
-	//cout << "ComputeSurfaceTension" << endl;
+	// cout << "ComputeSurfaceTension" << endl;
 }

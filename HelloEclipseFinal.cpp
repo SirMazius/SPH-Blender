@@ -1,11 +1,3 @@
-//============================================================================
-// Name        : HelloEclipseFinal.cpp
-// Author      : 
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
-//============================================================================
-
 #include <iostream>
 #include <omp.h>
 #include "Kernels.h"
@@ -24,9 +16,6 @@
 using namespace std;
 using namespace std::chrono;
 
-//void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
-//		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
-//		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
 
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
@@ -45,7 +34,6 @@ void add(int x, int y) {
 
 int main(int argc, char *argv[]) {
 
-	cout << "LA SIMULACION USARA ESTOS HILOS ->>> " << 4 << endl;
 //	omp_set_dynamic(0);
 //	omp_set_num_threads(1);
 
@@ -97,6 +85,9 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	/*
+	   INICIALIZAMOS LAS VARIABLES
+	*/
 	HashTable::Initialize();
 
 	vector<Vec3> l_pressureForce(FluidParams::nParticles), l_internalForce(FluidParams::nParticles), l_externalForce(FluidParams::nParticles), l_normals(
@@ -125,6 +116,7 @@ int main(int argc, char *argv[]) {
 	cout << "TENSION ->> " << FluidParams::surfaceTension << endl;
 	cout << "PARTICLE RADIUS ->> " << FluidParams::particleRadius << endl;
 
+	//Seleccionamos el metodo
 	if (mode == 0 || mode == 1) {
 		Compute_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
 				l_color, name, l_bounds, l_centers, l_Gs, l_det);
@@ -147,107 +139,73 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
+/*
+	Aqui hacemos los calculos tanto del A-SPH como del SPH normal
+ */
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
 		vector<double> & l_det) {
 
-	high_resolution_clock::time_point taux1, taux2;
-
 	int heightCounter = 50, auxHeightCounter = 0;
-	double accumTime = 0;
 
 	vector<Vec3> l_prevPos(FluidParams::nParticles);
 	l_prevPos = l_positions;
 	vector<float> l_densityBorder(FluidParams::nParticles);
 
 	for (int i = 1; i < FluidParams::simulationSteps; i++) {
-		high_resolution_clock::time_point t3 = high_resolution_clock::now();
+
 		for (int j = 0; j < 10; j++) {
 
-			taux1 = high_resolution_clock::now();
 			HashTable::InsertParticles(l_positions);
-			taux2 = high_resolution_clock::now();
-			auto auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//			cout << "INSERT DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
 
-			taux1 = high_resolution_clock::now();
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
-			taux2 = high_resolution_clock::now();
-			auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//			cout << "RETRIEVE DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
 
 			if (mode == 1) {
 				InternalForces::ComputeAnisotropy(l_neighbors, l_positions, l_centers, l_Gs, l_det);
 				InternalForces::ComputeAnisotropyMassDensity(l_density, l_positions, l_neighbors, l_centers, l_Gs, l_det);
 			} else {
-				taux1 = high_resolution_clock::now();
 				InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
-				taux2 = high_resolution_clock::now();
-				auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//				cout << "DENSITY DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
 			}
 
-			taux1 = high_resolution_clock::now();
+			/*
+			  	  Fuerzas internas
+			*/
 			InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
 			InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_pressureForce, l_neighbors);
 			InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors, l_positions);
-			taux2 = high_resolution_clock::now();
-			auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//			cout << "INTERNAL DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
-
-			taux1 = high_resolution_clock::now();
+			/*
+				  Fuerzas externas
+			*/
 			ExternalForces::ComputeGravity(l_externalForce, l_density);
 			ExternalForces::ComputeInwardNormal(l_density, l_neighbors, l_positions, l_normals);
 			ExternalForces::ComputeColorField(l_density, l_neighbors, l_positions, l_color);
 			ExternalForces::ComputeSurfaceTension(l_density, l_densityBorder, l_color, l_normals, l_externalForce);
-			taux2 = high_resolution_clock::now();
-			auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//			cout << "EXTERNAL DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
 
-			taux1 = high_resolution_clock::now();
+			/*
+			  	  Integracion y colision
+			*/
 			Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
 			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevPos);
-//			Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
 			Collision::Collide(l_positions, l_velocity, l_bounds, test);
-			taux2 = high_resolution_clock::now();
-			auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-//			cout << "INTEGRATION DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
 
 		}
 
 		float sDensity = 0;
 		int densityCounter = 0;
 		for (auto d : l_density) {
-			if (d > 600) {
 				sDensity += d;
 				densityCounter++;
-			}
-
 		}
 
 		if (heightCounter == 50) {
-//			BlenderIO::WriteHeightDensityData(l_positions, l_density, auxHeightCounter);
 			std::async(std::launch::async, BlenderIO::WriteHeightDensityData, l_positions, l_density, auxHeightCounter);
 			auxHeightCounter++;
 			heightCounter = 0;
 		}
 		heightCounter++;
-		taux1 = high_resolution_clock::now();
 
-//		BlenderIO::WritePOSVEL( name, i * FluidParams::dt, i, l_positions, l_velocity);
 		std::async(std::launch::async, BlenderIO::WritePOSVEL, name, i * FluidParams::dt, i, l_positions, l_velocity);
-		taux2 = high_resolution_clock::now();
-		auto auxDuration = duration_cast<microseconds>(taux2 - taux1).count();
-		cout << "WRITING DURATION-->>> " << auxDuration << " " << auxDuration / 1000000 << endl;
-
-		high_resolution_clock::time_point t4 = high_resolution_clock::now();
-		auto duration = duration_cast<microseconds>(t4 - t3).count();
-		cout << "NEW DURATION-->>> " << duration << " " << duration / 1000000 << endl;
-		accumTime += duration;
-		cout << "ACCUM DURATION -->>> " << accumTime / 1000000 << endl;
-//		float exsaif;
-//		cin >> exsaif;
 
 		sDensity /= densityCounter;
 
@@ -262,7 +220,6 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		densityBorder /= borderCounter;
 		cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << " " << densityBorder << endl;
 
-//		BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
 		BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
 	}
 }
@@ -286,9 +243,6 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 			HashTable::RetrieveNeighbors(l_neighbors, l_positions);
 
 			InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
-
-			//InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
-			//InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_internalForce, l_neighbors);
 			InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors, l_positions);
 			ExternalForces::ComputeGravity(l_externalForce, l_density);
 			ExternalForces::ComputeInwardNormal(l_density, l_neighbors, l_positions, l_normals);
@@ -303,21 +257,12 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 			vector<Vec3> l_auxPrevPos = l_positions;
 			vector<float> l_auxDensity = l_density;
 
-//			float sDensity = 0;
-//			for (auto d : l_density) {
-//				if (d > 250)
-//					sDensity += d;
-//			}
-//			sDensity /= FluidParams::nParticles;
-////
-////			 cout << "DENSIDAD INICIAL ->> " << sDensity << endl;
 			while (iterations < 6 || MaxpError > 5) {
 
 				Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_auxDensity);
 				Integrator::EulerSemi(l_auxPos, l_auxVelocity, l_acceleration);
 //				Integrator::LeapFrog(l_auxPos, l_auxVelocity, l_acceleration, l_auxPrevPos);
 
-//				Collision::Collide(l_auxPos, l_auxVelocity, l_bounds);
 				HashTable::InsertParticles(l_auxPos);
 				HashTable::RetrieveNeighbors(l_neighbors, l_auxPos);
 
@@ -334,7 +279,6 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 					break;
 				}
 
-//				cout << iterations << endl;
 				iterations++;
 			}
 
@@ -342,7 +286,6 @@ void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressur
 
 			Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
 			Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
-//			Integrator::LeapFrog(l_positions, l_velocity, l_acceleration, l_prevPos);
 			Collision::Collide(l_positions, l_velocity, l_bounds, test);
 
 		}
