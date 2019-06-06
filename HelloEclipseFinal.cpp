@@ -22,6 +22,11 @@ void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, 
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
 		vector<double> & l_det);
 
+void Compute_small_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
+		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
+		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
+		vector<double> & l_det);
+
 void Compute_PCI_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_pressureForce, vector<Vec3> & l_positions, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2]);
@@ -56,6 +61,9 @@ int main(int argc, char *argv[]) {
 		case 2:
 			cout << "EXECUTING PCI-SPH" << endl;
 			break;
+		case 3:
+			cout << "EXECUTIN SMALL-SPH" << endl;
+ 			break;
 		default:
 			cout << "WRONG MODE DETECTED" << endl;
 			return 0;
@@ -123,6 +131,9 @@ int main(int argc, char *argv[]) {
 	} else if (mode == 2) {
 		Compute_PCI_SPH(l_neighbors, l_pressureForce, l_positions, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density,
 				l_pressures, l_color, name, l_bounds);
+	} else if (mode == 3){
+		Compute_small_SPH(l_neighbors, l_positions, l_pressureForce, l_internalForce, l_externalForce, l_velocity, l_acceleration, l_normals, l_density, l_pressures,
+						l_color, name, l_bounds, l_centers, l_Gs, l_det);
 	} else {
 		cout << "Not correct mode selected" << endl;
 	}
@@ -139,9 +150,85 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
+void Compute_small_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
+		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
+		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,
+		vector<double> & l_det) {
+
+
+		vector<Vec3> l_prevPos(FluidParams::nParticles);
+		l_prevPos = l_positions;
+		vector<float> l_densityBorder(FluidParams::nParticles);
+
+		for (int i = 1; i < FluidParams::simulationSteps; i++) {
+
+		HashTable::InsertParticles(l_positions);
+
+		HashTable::RetrieveNeighbors(l_neighbors, l_positions);
+
+//		if (mode == 1) {
+			InternalForces::ComputeAnisotropy(l_neighbors, l_positions, l	_centers, l_Gs, l_det);
+			InternalForces::ComputeAnisotropyMassDensity(l_density, l_positions, l_neighbors, l_centers, l_Gs, l_det);
+//		} else {
+//			InternalForces::ComputeMassDensity(l_density, l_positions, l_neighbors);
+//		}
+
+		/*
+			  Fuerzas internas
+		*/
+		InternalForces::ComputePressures(l_density, l_pressures, FluidParams::restDensity);
+		InternalForces::ComputePressureForce(l_density, l_positions, l_pressures, l_pressureForce, l_neighbors);
+		InternalForces::ComputeViscosityForce(l_density, l_velocity, l_internalForce, l_neighbors, l_positions);
+		/*
+			  Fuerzas externas
+		*/
+		ExternalForces::ComputeGravity(l_externalForce, l_density);
+		ExternalForces::ComputeInwardNormal(l_density, l_neighbors, l_positions, l_normals);
+		ExternalForces::ComputeColorField(l_density, l_neighbors, l_positions, l_color);
+		ExternalForces::ComputeSurfaceTension(l_density, l_densityBorder, l_color, l_normals, l_externalForce);
+
+		/*
+			  Integracion y colision
+		*/
+		Integrator::ComputeAccelerations(l_acceleration, l_internalForce, l_pressureForce, l_externalForce, l_density);
+		Integrator::EulerSemi(l_positions, l_velocity, l_acceleration);
+		Collision::Collide(l_positions, l_velocity, l_bounds, test);
+
+
+
+			float sDensity = 0;
+			int densityCounter = 0;
+			for (auto d : l_density) {
+					sDensity += d;
+					densityCounter++;
+			}
+
+
+			BlenderIO::WriteHeightDensityData(l_positions, l_density, i);
+			BlenderIO::WriteForces(l_internalForce, l_pressureForce, l_externalForce, i);
+			BlenderIO::WriteDensityPerParticle(l_positions, l_density, i);
+			BlenderIO::WritePOSVEL(name, i * FluidParams::dt, i, l_positions, l_velocity);
+
+			sDensity /= densityCounter;
+
+			float densityBorder = 0;
+			int borderCounter = 0;
+			for (auto dB : l_densityBorder) {
+				if (dB) {
+					densityBorder += dB;
+					borderCounter++;
+				}
+			}
+			densityBorder /= borderCounter;
+			cout << "///////////////////////>>>>>>>>>" << i << "                     " << sDensity << " " << densityBorder << endl;
+
+			BlenderIO::WriteExcelData("ExampleFile", sDensity, densityBorder, 0.0);
+		}
+}
+
 /*
 	Aqui hacemos los calculos tanto del A-SPH como del SPH normal
- */
+*/
 void Compute_SPH(vector<vector<int>> & l_neighbors, vector<Vec3> & l_positions, vector<Vec3> & l_pressureForce, vector<Vec3> & l_internalForce,
 		vector<Vec3> & l_externalForce, vector<Vec3> & l_velocity, vector<Vec3> l_acceleration, vector<Vec3> l_normals, vector<float> l_density,
 		vector<float> l_pressures, vector<float> l_color, string name, Vec3 l_bounds[2], vector<Vector3d> & l_centers, vector<MatrixXd> & l_Gs,

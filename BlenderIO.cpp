@@ -1,4 +1,5 @@
 #include "BlenderIO.h"
+
 unordered_map<string, string> BlenderIO::parametersMap;
 vector<string> BlenderIO::l_parameters { "name", "nparts", "particle_volume", "kernel_parts", "tini", "tfin", "tstep", "density", "visco", "stiff", "surften",
 		"surften_threshold", "collision_restitution" };
@@ -218,5 +219,72 @@ void BlenderIO::WriteHeightDensityData(vector<Vec3> l_positions, vector<float> l
 	}
 
 	myfile.close();
+}
+
+void BlenderIO::WriteDensityPerParticle(vector<Vec3> l_positions, vector<float> l_density, int iteration) {
+	ofstream myFile;
+	string fileName = "particleDensity";
+	int size = l_positions.size();
+	myFile.open(fileName + to_string(iteration) + ".csv");
+
+	for (int i = 0; i < size; i++) {
+		myFile << to_string(l_density.at(i)) << ",";
+	}
+
+	myFile.close();
+
+}
+
+void BlenderIO::WriteEigenVectorsNEigenValues(const vector<vector<int>> & l_neighbors, const vector<Vec3> & l_positions, int iteration) {
+	ofstream myFile;
+	string fileName = "eVs";
+	myFile.open(fileName + to_string(iteration) + ".csv");
+	int count = l_positions.size();
+	float h = FluidParams::kernelRadius;
+	for (int i = 0; i < count; i++) {
+		vector<Vector3d> l_points;
+
+		for (int j : l_neighbors.at(i)) {
+			Vec3 vAux;
+			Vec3::vDirector(l_positions.at(j), l_positions.at(i), vAux);
+			if (vAux.mag() <= h) {
+				Vector3d point(l_positions.at(j).x, l_positions.at(j).y, l_positions.at(j).z);
+				l_points.push_back(point);
+			}
+		}
+
+		int auxCounter = l_points.size();
+		MatrixXd points(auxCounter, 3);
+
+		for (int j = 0; j < auxCounter; j++)
+			points.row(j) = l_points.at(j);
+
+		MatrixXd a = points.transpose();
+		VectorXd mean = points.colwise().mean();
+		MatrixXd var = (a).colwise() - mean;
+		MatrixXd t = var * var.transpose();
+		MatrixXd dst = t * (1 / (a.cols() - 1)); //S
+	//
+		EigenSolver<MatrixXd> es(dst);
+		VectorXd eigenValues = es.eigenvalues().real();
+		MatrixXd eigenVectors = es.eigenvectors().real();
+//		myFile << to_string(eigenValues[0]) << "," << to_string(eigenValues[1]) << "," << to_string(eigenValues[2]) << to_string(eigenVectors[0]) << "," << to_string(eigenVectors[1]) << "," << to_string(eigenVectors[2]) << "\n";
+	}
+	myFile.close();
+}
+
+void BlenderIO::WriteForces(vector<Vec3> & l_internalForce, vector<Vec3> & l_pressureForce,
+			vector<Vec3> & l_externalForce, int iteration) {
+	ofstream myFile;
+	string fileName = "forces";
+	myFile.open(fileName + to_string(iteration) + ".csv");
+	int count = l_internalForce.size();
+
+	for (int i = 0; i < count; i++) {
+		myFile << l_internalForce.at(i).x << "," << l_internalForce.at(i).y << "," << l_internalForce.at(i).z << ","
+				<< l_pressureForce.at(i).x << "," << l_pressureForce.at(i).y << "," << l_pressureForce.at(i).z << ","
+				<< l_externalForce.at(i).x << "," << l_externalForce.at(i).y << "," << l_externalForce.at(i).z <<  iteration << "\n";
+	}
+	myFile.close();
 }
 

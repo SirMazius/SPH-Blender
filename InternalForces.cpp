@@ -221,7 +221,7 @@ void InternalForces::GetMatrix(MatrixXd & input, MatrixXd & G, Vector3d & center
 //	cout << "G -> " << endl << G << endl;
 //	float jja;
 //	cin >> jja;
-
+//
 //		cout << "abR ->> " << endl << abReal << endl;
 //		cout << "DiagG ->> " << endl << diagG.asDiagonal() << endl;
 //		cout << "DIMENSIONES " << ab.rows() << "   " << ab.cols() << endl;
@@ -235,6 +235,8 @@ void InternalForces::GetMatrix(MatrixXd & input, MatrixXd & G, Vector3d & center
 //		cout << "REAL ->> "<<eigenValues.real() << endl;
 //		cout << "IMAG ->> "<<eigenValues.imag() << endl;
 }
+
+
 
 /*
    A-SPH
