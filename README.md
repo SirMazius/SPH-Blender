@@ -1,5 +1,4 @@
 # SPH-Blender
-https://www.codewars.com/users/SirMazius/badges/large
 Este es el repositorio de mi trabajo final de grado, el código
 permite realizar simulaciones de fluidos mediante distintos algoritmos de SPH (PCI-SPH, SPH y A-SPH). En algún momento se
 integrará como plugin de blender. Pero hasta entonces os dejo unos renders chulos:
